@@ -1,0 +1,103 @@
+body {
+    font-family: Jetbrains Mono, monospace;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+}
+
+#searchInput {
+    margin-left: 20px;
+    padding: 6px;
+    width: 300px;
+    border-radius: 8px;
+    border: 0px;
+    line-height: 1.4;
+    font-family: Jetbrains Mono, monospace;
+}
+
+.primary-button {
+    margin-left: 20px;
+    border-radius: 8px;
+    border: 0px;
+    height: 29px;
+    width: 70px;
+    font-family: Jetbrains Mono, monospace;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background-color: #aaa;
+    color: #fefefe;
+}
+
+#gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px;
+}
+
+.gif-item {
+    margin: 5px;
+    cursor: pointer;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.actions button,
+.actions input {
+    margin: 5px;
+    padding: 10px;
+}
