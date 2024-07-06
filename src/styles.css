@@ -15,7 +15,7 @@ header {
 
 #searchInput {
     margin-left: 20px;
-    padding: 6px;
+    padding: 5px 10px 5px 10px;
     width: 300px;
     border-radius: 8px;
     border: 0px;

@@ -1,0 +1,14 @@
+{
+  "name": "gif-animation-library",
+  "version": "1.0.0",
+  "description": "a basic gif animation library",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"hello, gifers!\" && exit 1"
+  },
+  "author": "Jonas Ababio",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
