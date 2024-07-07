@@ -1,14 +1,19 @@
 {
   "name": "gif-animation-library",
   "version": "1.0.0",
-  "description": "a basic gif animation library",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"hello, gifers!\" && exit 1"
+  "description": "a GIF animation library that allows users to search a GIF by keyword or select from a gallery.",
+  "main": "./src/gif-animation-library.js",
+  "directories": {
+    "example": "example"
   },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gif-animation",
+    "library",
+    "vanillaJS"
+  ],
   "author": "Jonas Ababio",
-  "license": "ISC",
-  "dependencies": {
-    "dotenv": "^16.4.5"
-  }
+  "license": "ISC"
 }

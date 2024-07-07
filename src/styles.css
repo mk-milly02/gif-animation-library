@@ -47,8 +47,11 @@ header {
 }
 
 .gif-item {
-    margin: 5px;
+    margin: 15px;
     cursor: pointer;
+    height: 250px;
+    width: 250px;
+    border-radius: 10px;
 }
 
 .modal {
