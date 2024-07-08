@@ -1,6 +1,7 @@
 import * as gif_animation_library from "./gif-animation-library.js";
 
 const gifModal = document.getElementById("gifModal");
+const gifTitle = document.getElementById("gifTitle");
 const gifDisplay = document.getElementById("gifDisplay");
 const closeBtn = document.querySelector(".close");
 let selectedGifUrl = "";
@@ -48,6 +49,7 @@ function displayGIFS(gifs) {
     img.addEventListener("click", () => {
       selectedGifUrl = gif.images.original.url;
       gifDisplay.src = selectedGifUrl;
+      gifTitle.innerText = gif.title
       gifModal.style.display = "flex";
     });
 

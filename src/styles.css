@@ -74,9 +74,14 @@ header {
     margin: auto;
     padding: 20px;
     border: 1px solid #888;
+    border-radius: 8px;
     width: 80%;
     max-width: 600px;
     text-align: center;
+}
+
+.modal-content img {
+    border-radius: 8px;
 }
 
 .close {
@@ -99,8 +104,27 @@ header {
     margin-top: 20px;
 }
 
-.actions button,
 .actions input {
     margin: 5px;
     padding: 10px;
+    font-family: Jetbrains Mono, monospace;
+    border-radius: 8px;
+    border: 0px;
+    background-color: whitesmoke;
+}
+
+.actions button {
+    margin: 5px;
+    padding: 10px;
+    font-family: Jetbrains Mono, monospace;
+    border-radius: 8px;
+    border: 0px;
+    font-weight: bold;
+    background-color: black;
+    color: #fefefe;
+    cursor: pointer;
+}
+
+.actions button:hover {
+    color: #aaa;
 }
