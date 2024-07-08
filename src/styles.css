@@ -82,6 +82,8 @@ header {
 
 .modal-content img {
     border-radius: 8px;
+    max-width: 400px;
+    max-height: 400px;
 }
 
 .close {
