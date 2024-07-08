@@ -6,6 +6,14 @@ const gifDisplay = document.getElementById("gifDisplay");
 const closeBtn = document.querySelector(".close");
 let selectedGifUrl = "";
 
+window.onload = async () => {
+  let gifs = await gif_animation_library.FetchTrendingGIFS();
+
+  console.log(gifs.statusCode);
+
+  displayGIFS(gifs);
+};
+
 closeBtn.addEventListener("click", () => {
   gifModal.style.display = "none";
 });
@@ -49,7 +57,7 @@ function displayGIFS(gifs) {
     img.addEventListener("click", () => {
       selectedGifUrl = gif.images.original.url;
       gifDisplay.src = selectedGifUrl;
-      gifTitle.innerText = gif.title
+      gifTitle.innerText = gif.title;
       gifModal.style.display = "flex";
     });
 
