@@ -3,8 +3,8 @@ import * as gif_animation_library from "./gif-animation-library.js";
 const gifModal = document.getElementById("gifModal");
 const gifTitle = document.getElementById("gifTitle");
 const gifDisplay = document.getElementById("gifDisplay");
+const gifInput = document.getElementById("gifInput");
 
-const closeBtn = document.querySelector(".close");
 let selectedGifUrl = "";
 let clickedImageInfo = {};
 
@@ -13,7 +13,9 @@ window.onload = async () => {
   displayGIFS(gifs);
 };
 
-closeBtn.addEventListener("click", () => {
+document
+  .querySelector(".close")
+  .addEventListener("click", () => {
   gifModal.style.display = "none";
   gifDisplay.src = "";
 });
@@ -40,12 +42,9 @@ document
 
 function displayGIFS(gifs) {
   const container = document.getElementById("gallery");
-
   container.innerHTML = "";
-
   gifs.body.data.forEach((gif) => {
     const img = document.createElement("img");
-
     img.src = gif.images.fixed_height_small.url;
     img.alt = gif.title;
     img.className = "gif-item";
@@ -55,7 +54,7 @@ function displayGIFS(gifs) {
       gifTitle.innerText = gif.title;
       gifModal.style.display = "flex";
 
-      // Store the clicked image in a global variable.
+      // store the clicked image in a global variable.
       clickedImageInfo = {
         url: gif.images.original.url,
         title: gif.title,
@@ -79,11 +78,8 @@ document.getElementById("shareButton").addEventListener("click", () => {
 });
 
 // download gif
-document
-  .getElementById("downloadButton")
-  .addEventListener("click", () =>
-    downloadGIF(clickedImageInfo?.img, clickedImageInfo?.title)
-  );
+document.getElementById("downloadButton").addEventListener("click", () =>
+    downloadGIF(clickedImageInfo?.img, clickedImageInfo?.title));
 
 async function downloadGIF(url, filename) {
   try {
@@ -104,4 +100,30 @@ async function downloadGIF(url, filename) {
   }
 }
 
+// upload gif
+document
+  .getElementById("uploadButton")
+  .addEventListener("click", () => gifInput.click());
 
+document
+  .getElementById("gifInput")
+  .addEventListener("change", () => uploadGIF());
+
+async function uploadGIF() {
+  let file = gifInput.files[0];
+  if (file && file.type === "image/gif") {
+    selectedGifUrl = URL.createObjectURL(file);
+    gifDisplay.src = selectedGifUrl;
+    gifTitle.innerText = file.name;
+    gifModal.style.display = "flex";
+
+    clickedImageInfo = {
+      url: selectedGifUrl,
+      title: file.name,
+      alt: file.name,
+      img: selectedGifUrl,
+    };
+  } else {
+    alert("Please select a valid GIF file.");
+  }
+}
