@@ -28,18 +28,13 @@ document
   .getElementById("searchButton")
   .addEventListener("click", async function (event) {
     event.preventDefault();
-
     const input = document.getElementById("searchInput").value;
-
     if (input == "") {
       alert("Please enter a search query.");
       return;
     }
-
     let gifs = await gif_animation_library.FetchGIFS(input);
-
     console.log(gifs.statusCode);
-
     displayGIFS(gifs);
   });
 
@@ -87,10 +82,10 @@ document.getElementById("shareButton").addEventListener("click", () => {
 document
   .getElementById("downloadButton")
   .addEventListener("click", () =>
-    downloadImage(clickedImageInfo?.img, clickedImageInfo?.title)
+    downloadGIF(clickedImageInfo?.img, clickedImageInfo?.title)
   );
 
-async function downloadImage(url, filename) {
+async function downloadGIF(url, filename) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -108,3 +103,5 @@ async function downloadImage(url, filename) {
     console.error("Error downloading image:", error);
   }
 }
+
+
