@@ -147,10 +147,35 @@ class Decoder {
         }
       } else if (blockId === 0x3b) {
         // trailer
+        this.#gif.terminator = blockId;
         break;
       } else {
         throw new Error("Unknown block type");
       }
     }
+  }
+}
+
+class Encoder {
+  constructor(gif) {
+    this.gif = gif;
+  }
+
+  encode() {
+    let gifData =
+      this.gif.header +
+      this.gif.logicalScreenDescriptor +
+      this.gif.globalColorTable;
+
+    for (let i = 0; i < this.frames.length; i++) {
+      gifData +=
+        this.frames[i].globalControlExtension +
+        this.frames[i].imageDescriptor +
+        this.frames[i].imageData;
+    }
+
+    gifData += this.gif.terminator;
+    const blob = new Blob([gifData], { type: 'image/gif' });
+    return URL.createObjectURL(blob)
   }
 }
