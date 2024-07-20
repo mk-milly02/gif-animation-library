@@ -86,53 +86,57 @@ class Decoder {
     while (this.#position < this.buffer.length) {
       const blockId = this.#readByte();
 
-      if (blockId === 0x2c) {
-        // image descriptor
-        const imageLeft = this.#readShort();
-        const imageTop = this.#readShort();
-        const imageWidth = this.#readShort();
-        const imageHeight = this.#readShort();
-        const packed = this.#readByte();
-        const localColorTableFlag = (packed & 0x80) >> 7;
-        const localColorTableSize = 2 ** ((packed & 0x07) + 1);
-
-        let image = {
-          descriptor: {
-            imageLeft,
-            imageTop,
-            imageWidth,
-            imageHeight,
-            packed,
-          },
-        };
-
-        if (localColorTableFlag) {
-          image.localColorTable = this.#readBytes(localColorTableSize);
-        }
-
-        // image Data
-        image.lzwMinCodeSize = this.#readByte();
-        let imageData = "";
-        while (true) {
-          const blockSize = this.#readByte();
-          if (blockSize === 0) break;
-          imageData += this.#readString(blockSize);
-        }
-        image.data = imageData;
-        this.#gif.frames.push(image);
-      } else if (blockId === 0x21) {
+      if (blockId === 0x21) {
         // 0x21 - extension introducer
         const controlLabel = this.#readByte();
         // graphic control extension
         if (controlLabel === 0xf9) {
-          const extension = {
+          const gce = {
             blockSize: this.#readByte(),
             packed: this.#readByte(),
             delayTime: this.#readShort(),
             transparentColorIndex: this.#readByte(),
             terminator: this.#readByte(),
           };
-          this.#gif.extensions.push(extension);
+
+          const imageBlockId = this.#readByte();
+
+          if (imageBlockId === 0x2c) {
+            // image descriptor
+            const imageLeft = this.#readShort();
+            const imageTop = this.#readShort();
+            const imageWidth = this.#readShort();
+            const imageHeight = this.#readShort();
+            const packed = this.#readByte();
+            const localColorTableFlag = (packed & 0x80) >> 7;
+            const localColorTableSize = 2 ** ((packed & 0x07) + 1);
+
+            let image = {
+              globalControlExtension: gce,
+              imageDescriptor: {
+                imageLeft,
+                imageTop,
+                imageWidth,
+                imageHeight,
+                packed,
+              },
+            };
+
+            if (localColorTableFlag) {
+              image.localColorTable = this.#readBytes(localColorTableSize);
+            }
+
+            // image Data
+            image.lzwMinCodeSize = this.#readByte();
+            let imageData = "";
+            while (true) {
+              const blockSize = this.#readByte();
+              if (blockSize === 0) break;
+              imageData += this.#readString(blockSize);
+            }
+            image.data = imageData;
+            this.#gif.frames.push(image);
+          }
         } else {
           // other extensions
           while (true) {
@@ -150,21 +154,3 @@ class Decoder {
     }
   }
 }
-
-async function test() {
-  const file = await fetch("Dance Dancing GIF by Kendrick Lamar.gif");
-
-  const buffer = await file.arrayBuffer();
-
-  const decoder = new Decoder(buffer);
-
-  const gif = decoder.decode();
-
-  console.log(gif.header);
-  console.log(gif.logicalScreenDescriptor);
-  console.log(gif.globalColorTable.length);
-  console.log(gif.frames.length);
-  console.log(gif.extensions.length);
-}
-
-await test();
