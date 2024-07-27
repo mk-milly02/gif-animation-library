@@ -1,218 +1,265 @@
-import "./gif.js";
-
-class GIFEncoder {
-    constructor(duration = 100) {
-        this.frames = [];
-        this.duration = duration;
-    }
-
-    addFrame(imageData) {
-        this.frames.push(imageData);
-    }
-
-    createGif(callback) {
-        const gifHeader = this._getGIFHeader();
-        const logicalScreenDescriptor = this._getLogicalScreenDescriptor();
-        const globalColorTable = this._getGlobalColorTable();
-        const graphicControlExtension = this._getGraphicControlExtension();
-        const imageDescriptor = this._getImageDescriptor();
-
-        let gifData = gifHeader + logicalScreenDescriptor + globalColorTable;
-
-        for (let i = 0; i < this.frames.length; i++) {
-            gifData += graphicControlExtension + imageDescriptor + this._encodeImageData(this.frames[i]);
-        }
-
-        gifData += this._getGIFTrailer();
-
-        const blob = new Blob([this._stringToUint8Array(gifData)], { type: 'image/gif' });
-        callback(URL.createObjectURL(blob));
-    }
-
-    _getGIFHeader() {
-        return "GIF89a";
-    }
-
-    _getLogicalScreenDescriptor() {
-        const width = 320; // Example width
-        const height = 240; // Example height
-        const packed = 0b11110000; // Global Color Table Flag set
-        const backgroundColorIndex = 0;
-        const pixelAspectRatio = 0;
-        return String.fromCharCode(width & 0xFF, (width >> 8) & 0xFF,
-                                   height & 0xFF, (height >> 8) & 0xFF,
-                                   packed, backgroundColorIndex, pixelAspectRatio);
-    }
-
-    _getGlobalColorTable() {
-        // Example color table (256 colors, 3 bytes each)
-        let colorTable = "";
-        for (let i = 0; i < 256; i++) {
-            colorTable += String.fromCharCode(i, i, i); // Greyscale color table
-        }
-        return colorTable;
-    }
-
-    _getGraphicControlExtension() {
-        const packed = 0b00001000; // Disposal method
-        return String.fromCharCode(0x21, 0xF9, 0x04, packed,
-                                   this.duration & 0xFF, (this.duration >> 8) & 0xFF, 0, 0);
-    }
-
-    _getImageDescriptor() {
-        const left = 0;
-        const top = 0;
-        const width = 320; // Example width
-        const height = 240; // Example height
-        const packed = 0; // No local color table, interlace, etc.
-        return String.fromCharCode(0x2C, left & 0xFF, (left >> 8) & 0xFF,
-                                   top & 0xFF, (top >> 8) & 0xFF,
-                                   width & 0xFF, (width >> 8) & 0xFF,
-                                   height & 0xFF, (height >> 8) & 0xFF,
-                                   packed);
-    }
-
-    _encodeImageData(imageData) {
-        // Simple example: use a fixed LZW minimum code size and trivial encoding
-        const lzwMinCodeSize = 8;
-        const imageDataBytes = String.fromCharCode(lzwMinCodeSize);
-
-        // Here you would typically compress imageData using LZW encoding
-        const imageDataBlock = imageDataBytes + String.fromCharCode(0x01, 0x01, 0x00);
-        return imageDataBlock + String.fromCharCode(0x00);
-    }
-
-    _getGIFTrailer() {
-        return String.fromCharCode(0x3B);
-    }
-
-    _stringToUint8Array(str) {
-        const len = str.length;
-        const array = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            array[i] = str.charCodeAt(i);
-        }
-        return array;
-    }
+export class GIF {
+  header;
+  logicalScreenDescriptor = {
+    canvasWidth: [],
+    canvasHeight: [],
+    packedField: [],
+    backgroundColorIndex: [],
+    pixelAspectRatio: [],
+  };
+  globalColorTable;
+  frames = []; // images
+  extensions = []; // (e.g., Comment Extension, Application Extension, Plain Text Extension)
+  trailer;
 }
 
-class GIFDecoder {
-    constructor() {
-        this.gif = new GIF();
+export class Decoder {
+  #gif = new GIF();
+  #position = 0;
+
+  constructor(buffer) {
+    this.buffer = new Uint8Array(buffer);
+  }
+
+  decode() {
+    this.#parseHeader();
+    this.#parseLogicalScreenDescriptor();
+    this.#parseGlobalColorTable();
+    this.#parseData();
+    return this.#gif;
+  }
+
+  #readBytes(length) {
+    const result = this.buffer.slice(this.#position, this.#position + length);
+    this.#position += length;
+    return result;
+  }
+
+  #readByte() {
+    return this.buffer[this.#position++];
+  }
+
+  #readString(length) {
+    let str = "";
+    for (let i = 0; i < length; i++) {
+      str += String.fromCharCode(this.#readByte());
     }
+    return str;
+  }
 
-    decodeGif(file, callback) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const gifData = new Uint8Array(event.target.result);
-            this._parseGIF(gifData);
-            callback(this.frames);
-        };
-        reader.readAsArrayBuffer(file);
+  #readShort() {
+    return this.#readByte() + (this.#readByte() << 8);
+  }
+
+  // Header (6 bytes)
+  #parseHeader() {
+    const header = this.#readString(6);
+    if (header !== "GIF87a" && header !== "GIF89a") {
+      throw new Error("Invalid GIF header");
     }
+    var enc = new TextEncoder();
+    this.#gif.header = enc.encode(header);
+  }
 
-    _parseGIF(data) {
-        // Basic GIF parsing logic to extract frames and metadata
-        let position = 0;
+  // Logical Screen Descriptor (7 bytes)
+  #parseLogicalScreenDescriptor() {
+    this.#gif.logicalScreenDescriptor.canvasWidth = this.#readShort();
+    this.#gif.logicalScreenDescriptor.canvasHeight = this.#readShort();
+    this.#gif.logicalScreenDescriptor.packedField = this.#readByte();
+    this.#gif.logicalScreenDescriptor.backgroundColorIndex = this.#readByte();
+    this.#gif.logicalScreenDescriptor.pixelAspectRatio = this.#readByte();
+  }
 
-        const readBytes = (length) => {
-            const result = data.slice(position, position + length);
-            position += length;
-            return result;
-        };
+  // Global Color Map (3*2^(N+1)) 3 btyes for each color
+  #parseGlobalColorTable() {
+    const globalColorTableFlag =
+      (this.#gif.logicalScreenDescriptor.packedField & 0x80) >> 7;
+    if (globalColorTableFlag) {
+      const globalColorTableSize =
+        this.#gif.logicalScreenDescriptor.packedField & 0x07;
+      const globalColorTableByteLength = 3 * 2 ** (globalColorTableSize + 1);
+      this.#gif.globalColorTable = this.#readBytes(globalColorTableByteLength);
+    }
+  }
 
-        const readByte = () => {
-            return data[position++];
-        };
+  // Extension blocks with image data
+  #parseData() {
+    while (this.#position < this.buffer.length) {
+      const blockId = this.#readByte();
 
-        const readString = (length) => {
-            let str = '';
-            for (let i = 0; i < length; i++) {
-                str += String.fromCharCode(readByte());
+      if (blockId === 0x21) { // 0x21 - extension introducer
+        const controlLabel = this.#readByte();
+        
+        if (controlLabel === 0xf9) { // graphic control extension
+          const gce = {
+            blockId: blockId,
+            controlLabel: controlLabel,
+            blockSize: this.#readByte(),
+            packed: this.#readByte(),
+            delayTime: this.#readShort(),
+            transparentColorIndex: this.#readByte(),
+            terminator: this.#readByte(),
+          };
+
+          const imageBlockId = this.#readByte();
+
+          if (imageBlockId === 0x2c) {
+            // image descriptor
+            const imageLeft = this.#readShort();
+            const imageTop = this.#readShort();
+            const imageWidth = this.#readShort();
+            const imageHeight = this.#readShort();
+            const packed = this.#readByte();
+            const localColorTableFlag = (packed & 0x80) >> 7;
+            const localColorTableSize = 2 ** ((packed & 0x07) + 1);
+
+            let image = {
+              globalControlExtension: gce,
+              imageDescriptor: {
+                imageBlockId,
+                imageLeft,
+                imageTop,
+                imageWidth,
+                imageHeight,
+                packed,
+              },
+              hasLCT: localColorTableFlag,
+            };
+
+            if (localColorTableFlag) {
+              image.localColorTable = this.#readBytes(localColorTableSize);
             }
-            return str;
-        };
 
-        const readShort = () => {
-            return readByte() + (readByte() << 8);
-        };
-
-        // Header
-        const header = readString(6);
-        if (header !== 'GIF87a' && header !== 'GIF89a') {
-            this.gif.header = header
-            throw new Error('Invalid GIF header');
-        }
-
-        // Logical Screen Descriptor
-        const width = readShort();
-        const height = readShort();
-        const packed = readByte();
-        const globalColorTableFlag = (packed & 0x80) >> 7;
-        const colorResolution = (packed & 0x70) >> 4;
-        const sortFlag = (packed & 0x08) >> 3;
-        const globalColorTableSize = 2 ** ((packed & 0x07) + 1);
-        const backgroundColorIndex = readByte();
-        const pixelAspectRatio = readByte();
-
-        // Global Color Table
-        if (globalColorTableFlag) {
-            readBytes(3 * globalColorTableSize);
-        }
-
-        while (position < data.length) {
-            const blockId = readByte();
-
-            if (blockId === 0x2C) {
-                // Image Descriptor
-                const imageLeft = readShort();
-                const imageTop = readShort();
-                const imageWidth = readShort();
-                const imageHeight = readShort();
-                const packed = readByte();
-                const localColorTableFlag = (packed & 0x80) >> 7;
-                const interlaceFlag = (packed & 0x40) >> 6;
-                const sortFlag = (packed & 0x20) >> 5;
-                const localColorTableSize = 2 ** ((packed & 0x07) + 1);
-
-                if (localColorTableFlag) {
-                    readBytes(3 * localColorTableSize);
-                }
-
-                // Image Data
-                const lzwMinCodeSize = readByte();
-                let imageData = '';
-                while (true) {
-                    const blockSize = readByte();
-                    if (blockSize === 0) break;
-                    imageData += readString(blockSize);
-                }
-                this.frames.push({ width, height, left: imageLeft, top: imageTop, imageData });
-            } else if (blockId === 0x21) {
-                // Extension Block
-                const label = readByte();
-                if (label === 0xF9) {
-                    // Graphic Control Extension
-                    const blockSize = readByte();
-                    const packed = readByte();
-                    const delayTime = readShort();
-                    const transparentColorIndex = readByte();
-                    const terminator = readByte();
-                } else {
-                    // Other extensions (e.g., Comment Extension, Application Extension)
-                    while (true) {
-                        const blockSize = readByte();
-                        if (blockSize === 0) break;
-                        readBytes(blockSize);
-                    }
-                }
-            } else if (blockId === 0x3B) {
-                // Trailer
-                break;
-            } else {
-                throw new Error('Unknown block type');
+            // image data
+            let data = [this.#readByte()]; // lsw
+            while (true) {
+              const blockSize = this.#readByte();
+              data.push(blockSize);
+              if (blockSize === 0) break;
+              const d = this.#readBytes(blockSize);
+              for (let index = 0; index < d.length; index++) {
+                data.push(d[index]);
+              }
             }
+            image.data = new Uint8Array(data);
+            this.#gif.frames.push(image);
+          }
+        } else {
+          // other extensions
+          let extension = [blockId, controlLabel];
+          while (true) {
+            const blockSize = this.#readByte();
+            extension.push(blockSize);
+            if (blockSize === 0) break;
+            const ext = this.#readBytes(blockSize);
+            for (let index = 0; index < ext.length; index++) {
+                extension.push(ext[index]);  
+            }
+          }
+          this.#gif.extensions.push(new Uint8Array(extension));
         }
+      } else if (blockId === 0x3b) {
+        // trailer
+        this.#gif.trailer = blockId;
+        break;
+      } else {
+        throw new Error("Unknown block type");
+      }
     }
+  }
 }
 
+export class Encoder {
+  constructor(gif) {
+    this.gif = gif;
+  }
+
+  async encode() {
+    let gifData = [];
+
+    gifData.push(this.gif.header);
+    gifData.push(this.#getLogicalScreenDescriptor());
+    gifData.push(this.gif.globalColorTable);
+    gifData.push(this.gif.extensions);
+
+    for (let i = 0; i < this.gif.frames.length; i++) {
+      gifData.push(this.#getGlobalControlExtension(i));
+      gifData.push(this.#getImageDescriptor(i));
+      if (this.gif.frames[i].hasLCT) {
+        gifData.push(this.gif.frames[i].localColorTable);
+      }
+      gifData.push(this.gif.frames[i].data);
+    }
+
+    gifData.push(new Uint8Array([this.gif.trailer]));
+
+    const x = gifData.join(",");
+    const y = x.split(",");
+
+    const encodedGIF = new Uint8Array(y);
+
+    console.log(encodedGIF);
+
+    const blob = new Blob([encodedGIF]);
+    return URL.createObjectURL(blob);
+  }
+
+  #getLogicalScreenDescriptor() {
+    return new Uint8Array([
+      this.gif.logicalScreenDescriptor.canvasWidth & 0xff,
+      this.gif.logicalScreenDescriptor.canvasWidth >> 8,
+      this.gif.logicalScreenDescriptor.canvasHeight & 0xff,
+      this.gif.logicalScreenDescriptor.canvasHeight >> 8,
+      this.gif.logicalScreenDescriptor.packedField,
+      this.gif.logicalScreenDescriptor.backgroundColorIndex,
+      this.gif.logicalScreenDescriptor.pixelAspectRatio,
+    ]);
+  }
+
+  #getGlobalControlExtension(i) {
+    return new Uint8Array([
+      this.gif.frames[i].globalControlExtension.blockId,
+      this.gif.frames[i].globalControlExtension.controlLabel,
+      this.gif.frames[i].globalControlExtension.blockSize,
+      this.gif.frames[i].globalControlExtension.packed,
+      this.gif.frames[i].globalControlExtension.delayTime & 0xff,
+      this.gif.frames[i].globalControlExtension.delayTime >> 8,
+      this.gif.frames[i].globalControlExtension.transparentColorIndex,
+      this.gif.frames[i].globalControlExtension.terminator,
+    ]);
+  }
+
+  #getImageDescriptor(i) {
+    return new Uint8Array([
+      this.gif.frames[i].imageDescriptor.imageBlockId,
+      this.gif.frames[i].imageDescriptor.imageLeft & 0xff,
+      this.gif.frames[i].imageDescriptor.imageLeft >> 8,
+      this.gif.frames[i].imageDescriptor.imageTop & 0xff,
+      this.gif.frames[i].imageDescriptor.imageTop >> 8,
+      this.gif.frames[i].imageDescriptor.imageWidth & 0xff,
+      this.gif.frames[i].imageDescriptor.imageWidth >> 8,
+      this.gif.frames[i].imageDescriptor.imageHeight & 0xff,
+      this.gif.frames[i].imageDescriptor.imageHeight >> 8,
+      this.gif.frames[i].imageDescriptor.packed,
+    ]);
+  }
+}
+
+function buf2hex(buffer) {
+  return [...new Uint8Array(buffer)]
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function begin() {
+  const file = await fetch("./sample_2_animation.gif");
+  const buffer = await file.arrayBuffer();
+
+  const decoder = new Decoder(buffer);
+  const gif = decoder.decode();
+
+  const encoder = new Encoder(gif);
+  const url = await encoder.encode();
+}
+
+begin();

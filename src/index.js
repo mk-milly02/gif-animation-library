@@ -13,9 +13,7 @@ window.onload = async () => {
   displayGIFS(gifs);
 };
 
-document
-  .querySelector(".close")
-  .addEventListener("click", () => {
+document.querySelector(".close").addEventListener("click", () => {
   gifModal.style.display = "none";
   gifDisplay.src = "";
 });
@@ -78,8 +76,11 @@ document.getElementById("shareButton").addEventListener("click", () => {
 });
 
 // download gif
-document.getElementById("downloadButton").addEventListener("click", () =>
-    downloadGIF(clickedImageInfo?.img, clickedImageInfo?.title));
+document
+  .getElementById("downloadButton")
+  .addEventListener("click", () =>
+    downloadGIF(clickedImageInfo?.img, clickedImageInfo?.title)
+  );
 
 async function downloadGIF(url, filename) {
   try {
@@ -127,3 +128,22 @@ async function uploadGIF() {
     alert("Please select a valid GIF file.");
   }
 }
+
+// trim gif
+document
+  .getElementById("trimButton")
+  .addEventListener("click", async function (event) {
+    event.preventDefault();
+    const trimFrames = document.getElementById("trimFrames").value;
+    try {
+      let url = await gif_animation_library.TrimGIF(selectedGifUrl, trimFrames);
+      selectedGifUrl = url;
+      gifDisplay.src = selectedGifUrl;
+      clickedImageInfo.url = selectedGifUrl;
+      clickedImageInfo.img = selectedGifUrl;
+      clickedImageInfo.title += "-trimmed";
+    } catch (error) {
+      console.log("Error trimming GIF:", error);
+      alert("Invalid trim count");
+    }
+  });
