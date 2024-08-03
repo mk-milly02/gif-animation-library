@@ -250,16 +250,3 @@ function buf2hex(buffer) {
     .map((x) => x.toString(16).padStart(2, "0"))
     .join("");
 }
-
-async function begin() {
-  const file = await fetch("./sample_2_animation.gif");
-  const buffer = await file.arrayBuffer();
-
-  const decoder = new Decoder(buffer);
-  const gif = decoder.decode();
-
-  const encoder = new Encoder(gif);
-  const url = await encoder.encode();
-}
-
-begin();
