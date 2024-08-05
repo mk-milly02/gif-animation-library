@@ -141,7 +141,6 @@ document
       gifDisplay.src = selectedGifUrl;
       clickedImageInfo.url = selectedGifUrl;
       clickedImageInfo.img = selectedGifUrl;
-      clickedImageInfo.title += "-trimmed";
     } catch (error) {
       console.log("Error trimming GIF:", error);
       alert("Invalid trim count");
